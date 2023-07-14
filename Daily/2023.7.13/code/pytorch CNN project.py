@@ -21,10 +21,10 @@ torch.set_grad_enabled(True)
 # ETL 过程,简称1.抓取数据,2.转换数据和3.加载数据的过程
 torch.set_printoptions(linewidth=120)
 
-# 声明用GPU跑
+'''# 声明用GPU跑
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'''
 
 train_set = torchvision.datasets.FashionMNIST(
     root='.\data'
@@ -40,17 +40,17 @@ images, labels = batch
 
 '''---------------------------------------------------------------------------------------------------------------------
  此部分内容为观察数据,查看数据的构成,理解数据'''
-print(len(train_set))  # 查看训练集大小  60000
-print(train_set.targets)  # 查看每个数据的标签,属于哪一个类  tensor([9, 0, 0,  ..., 3, 0, 5])
-print(train_set.targets.bincount())  # 查看每个标签的数量
+# print(len(train_set))  # 查看训练集大小  60000
+# print(train_set.targets)  # 查看每个数据的标签,属于哪一个类  tensor([9, 0, 0,  ..., 3, 0, 5])
+# print(train_set.targets.bincount())  # 查看每个标签的数量
 
 sample = next(iter(train_set))  # iter返回一个数据流对象,next函数获取数据流中的下一个数据
-print(len(sample))  # 每个样本长度2,因为每个样本包含两部分 ,图片本身和对应标签
+# print(len(sample))  # 每个样本长度2,因为每个样本包含两部分 ,图片本身和对应标签
 image, label = sample
-print(type(image))  # <class 'torch.Tensor'>  样本两个元素都是tensor类型
-print(type(label))  # <class 'int'>
-print(image.shape)  # torch.Size([1, 28, 28])  1颜色通道 28*28尺寸
-print(torch.tensor(label).shape)  # torch.Size([])  标量tensor
+# print(type(image))  # <class 'torch.Tensor'>  样本两个元素都是tensor类型
+# print(type(label))  # <class 'int'>
+# print(image.shape)  # torch.Size([1, 28, 28])  1颜色通道 28*28尺寸
+# print(torch.tensor(label).shape)  # torch.Size([])  标量tensor
 
 '''plt.imshow(image.squeeze(),cmap='gray')  展示图片
 plt.show()'''
@@ -74,10 +74,8 @@ plt.figure(figsize=(15,15))
 plt.imshow(grid.permute(1,2,0))
 plt.show()'''
 
-'''---------------------------------------------------------------------------------------------------------------------
-此部分为构建CNN模型,面向对象OOP'''
 
-
+'''----------------------------------------------------------------------------------------此部分为构建CNN模型,面向对象OOP'''
 class NetWork(nn.Module):  # 继承nn.Module类
     def __init__(self):
         super().__init__()  # 如果不super(),子类的init会覆盖父类的init
@@ -118,7 +116,7 @@ class NetWork(nn.Module):  # 继承nn.Module类
 
 
 network = NetWork()
-network.to(device)  # 模型放在GPU上
+# network.to(device)  # 模型放在GPU上
 '''print('\n\n', network, '\n\n')  # 详细的打印了 继承的nn.module类提供的自定义字符串表示
 print(network.conv1.weight)  # 访问权重参数,因为第一次,6个输出,也即6个滤波器,每个滤波器尺寸5*5,刚好6*5*5=120个参数(其实除了权重参数,还要偏置参数bias)'''
 
@@ -134,8 +132,8 @@ optimizer = optim.Adam(network.parameters(), lr=0.01)  # 选用优化器,将参�
 for epoch in range(5):
     for batch in train_loader:
         images, labels = batch
-        images = images.to(device)  # 数据放在GPU运行
-        labels = labels.to(device)
+        # images = images.to(device)  # 数据放在GPU运行
+        # labels = labels.to(device)
         predict = network(images)  # 预测,不用我们调用前向传播函数forward(),pytorch内置自动调用
         loss = F.cross_entropy(predict, labels)  # 计算损失函数
         total_correct += num_of_correct(predict, labels)  # 预测正确的个数
@@ -153,21 +151,23 @@ def get_all_prediction(model, loader):
     all_predict = torch.tensor([])
     for batch in loader:
         pictures, targets = batch
-        pictures = pictures.to(device)
-        targets = targets.to(device)
-        model.to(device)
+        # pictures = pictures.to(device)
+        # targets = targets.to(device)
+        # model.to(device)
         prediction = model(pictures)
         all_predict = torch.cat((all_predict, prediction))
-        return all_predict
+    return all_predict
 
 with torch.no_grad():  # 因为是最终预测,模型已经训练好,不需要梯度跟踪
     all_prediction = get_all_prediction(network, train_loader)  # torch.Size([60000, 10]) ,一个60000图片,每个图片对应10个预测值
 
+# print(train_set.targets)
+# print(all_prediction.argmax(dim=1))
 stack = torch.stack((train_set.targets, all_prediction.argmax(dim=1)), dim=1)  # train_set.target是真实标签,all_prediction.argmax(dim=1)是预测标签的索引
 
 # 创建一个混淆矩阵
 cmt = torch.zeros(10, 10)
-for p in cmt:
+for p in stack:
     i,j = p.tolist()
     cmt[i][j] = cmt[i][j] + 1
 
@@ -184,4 +184,5 @@ print(cmt)
  [  40    1   23   20   13   15   25   15 5846    2]
  [   1    0    1    0    0   20    0  307    5 5666]]
 '''
+
 
